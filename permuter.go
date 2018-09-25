@@ -1,32 +1,31 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: The middle tile is always the same, and always rotated the same.
-
-var tilePermutationBase = 9
-var maxRotationModel, _ = strconv.ParseInt("333333333", 4, 64)
+var tilePermutationBase = 8
+var rotaPermutationBase = 4
 
 func permute(tileModel, rotaModel string) (string, string) {
-	rotaInt, _ := strconv.ParseInt(rotaModel, 4, 64)
-	newTileModel := tileModel
-	newRotaInt := rotaInt
-	if rotaInt < maxRotationModel {
-		newRotaInt = permuteRotation(rotaInt)
-	} else {
-		newTileModel = permuteTiles(tileModel)
-		newRotaInt = 0
+	rotaInt, _ := strconv.ParseInt(rotaModel, rotaPermutationBase, 64)
+	newRotaInt := rotaInt + 1
+	newRotaModel := strconv.FormatInt(newRotaInt, rotaPermutationBase)
+	// pad rota model
+	for len(newRotaModel) < tilePermutationBase {
+		newRotaModel = fmt.Sprintf("0%v", newRotaModel)
 	}
-	newRotaModel := strconv.FormatInt(newRotaInt, 4)
-	return newTileModel, newRotaModel
-}
-
-func permuteRotation(rotaInt int64) int64 {
-	return rotaInt + 1
+	if len(newRotaModel) > tilePermutationBase {
+		newRotaModel = "0"
+		for len(newRotaModel) < tilePermutationBase {
+			newRotaModel = fmt.Sprintf("0%v", newRotaModel)
+		}
+		return permuteTiles(tileModel), newRotaModel
+	}
+	return tileModel, newRotaModel
 }
 
 func permuteTiles(tileModel string) string {
@@ -38,12 +37,23 @@ func permuteTiles(tileModel string) string {
 }
 
 func incrementTileModel(tileModel string) string {
+	log.Debugf("increment tile model %v", tileModel)
 	tileModel = stringAdd(tileModel, -1)
+	log.Debugf("subtracted 1: %v", tileModel)
 	tileInt, e := strconv.ParseInt(tileModel, tilePermutationBase, 64)
 	check(e)
+	log.Debugf("converted to int in base %v: %v", tilePermutationBase, tileInt)
 	tileInt++
+	log.Debugf("incremented: %v", tileInt)
 	tileModel = strconv.FormatInt(tileInt, tilePermutationBase)
-	return stringAdd(tileModel, 1)
+	log.Debugf("converted to string: %v", tileModel)
+	for len(tileModel) < tilePermutationBase {
+		tileModel = fmt.Sprintf("0%v", tileModel)
+	}
+	log.Debugf("padded string: %v", tileModel)
+	tileModel = stringAdd(tileModel, 1)
+	log.Debugf("added 1: %v", tileModel)
+	return tileModel
 }
 
 func stringAdd(st string, add int64) string {
@@ -74,6 +84,7 @@ func validTileModel(tileModel string) bool {
 		}
 		if !found {
 			log.Debugf("  no, couldn't find %v in %v", lookfor, tileModel)
+			return false
 		}
 	}
 	return true
