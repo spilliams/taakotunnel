@@ -8,6 +8,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -43,42 +44,79 @@ func main() {
 	}
 	tiles := makeTiles()
 
-	// TODO use permutation rather than shuffling
+	tileModel := "12345678"
+	rotaModel := "00000000"
+	endTileModel := "87654321"
 	count := 0
-	defer log.Infof("Tried %v combinations", count)
-	for {
-		shuffleTiles(tiles)
-		for i := 0; i < 9; i++ {
-			r := rand.New(rand.NewSource(time.Now().Unix()))
-			tiles[i].RotateTo(r.Intn(4))
-		}
-		tileSet := [][]*Tile{
-			{
-				tiles[0],
-				tiles[1],
-				tiles[2],
-			}, {
-				tiles[3],
-				tiles[4],
-				tiles[5],
-			}, {
-				tiles[6],
-				tiles[7],
-				tiles[8],
-			},
-		}
-		// log.Infof("Trying configuration: %v", printTileSet(tileSet, true))
-		count++
-		if count%10000 == 0 {
-			log.Infof("Tried %v combinations", count)
-		}
 
-		if checkBoard(boardTunnels, tileSet) {
-			fmt.Printf("Hooray, we have a solution! after %v tries! tiles are:\n", count)
-			fmt.Println(printTileSet(tileSet, false))
+	for tileModel < endTileModel {
+		log.Debugf("Trying %v %v", tileModel, rotaModel)
+		set, e := makeTileSet(tiles, tileModel, rotaModel)
+		check(e)
+
+		if checkBoard(boardTunnels, set) {
+			fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
+			fmt.Printf("Solution: %v %v", tileModel, endTileModel)
+		}
+		count++
+		if count%10000000 == 0 {
+			log.Infof("Tried %v combinations. Current model %v %v\n", count, tileModel, rotaModel)
+		}
+		tileModel, rotaModel = permute(tileModel, rotaModel)
+	}
+	log.Debugf("Trying %v %v", tileModel, rotaModel)
+	set, e := makeTileSet(tiles, tileModel, rotaModel)
+	check(e)
+
+	if checkBoard(boardTunnels, set) {
+		fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
+		fmt.Printf("Solution: %v %v", tileModel, endTileModel)
+	}
+	count++
+	if count%10000000 == 0 {
+		log.Infof("Tried %v combinations. Current model %v %v\n", count, tileModel, rotaModel)
+	}
+	tileModel, rotaModel = permute(tileModel, rotaModel)
+}
+
+func makeTileSet(tiles []*Tile, tileModel string, rotaModel string) ([][]*Tile, error) {
+	centerTile, e := NewTile([]Tunnel{
+		{In: TunnelTopLeft, Out: TunnelBottomRight},
+		{In: TunnelTopRight, Out: TunnelLeftTop},
+		{In: TunnelRightTop, Out: TunnelRightBottom},
+		{In: TunnelBottomLeft, Out: TunnelLeftBottom},
+	}, "d")
+	if e != nil {
+		return nil, e
+	}
+	centerTile.RotateTopTo(DirectionSouth)
+
+	// rotate tiles
+	for i := 0; i < len(rotaModel); i++ {
+		rotateTo64, _ := strconv.ParseInt(rotaModel[i:i+1], 10, 0)
+		e = tiles[i].RotateTopTo(int(rotateTo64))
+		if e != nil {
+			return nil, e
 		}
 	}
 
+	tileSet := [][]*Tile{
+		{
+			tiles[0],
+			tiles[1],
+			tiles[2],
+		}, {
+			tiles[3],
+			centerTile,
+			tiles[4],
+		}, {
+			tiles[5],
+			tiles[6],
+			tiles[7],
+		},
+	}
+
+	return tileSet, nil
 }
 
 func printTileSet(tileSet [][]*Tile, oneLine bool) string {
@@ -128,41 +166,34 @@ func makeTiles() []*Tile {
 	}, "c")
 	check(e)
 	tile4, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelBottomRight},
-		{In: TunnelTopRight, Out: TunnelLeftTop},
-		{In: TunnelRightTop, Out: TunnelRightBottom},
-		{In: TunnelBottomLeft, Out: TunnelLeftBottom},
-	}, "d")
-	check(e)
-	tile5, e := NewTile([]Tunnel{
 		{In: TunnelTopLeft, Out: TunnelRightTop},
 		{In: TunnelTopRight, Out: TunnelBottomRight},
 		{In: TunnelRightBottom, Out: TunnelBottomLeft},
 		{In: TunnelLeftBottom, Out: TunnelLeftTop},
 	}, "e")
 	check(e)
-	tile6, e := NewTile([]Tunnel{
+	tile5, e := NewTile([]Tunnel{
 		{In: TunnelTopLeft, Out: TunnelBottomRight},
 		{In: TunnelTopRight, Out: TunnelRightTop},
 		{In: TunnelRightBottom, Out: TunnelLeftBottom},
 		{In: TunnelBottomLeft, Out: TunnelLeftTop},
 	}, "f")
 	check(e)
-	tile7, e := NewTile([]Tunnel{
+	tile6, e := NewTile([]Tunnel{
 		{In: TunnelTopLeft, Out: TunnelBottomRight},
 		{In: TunnelTopRight, Out: TunnelLeftBottom},
 		{In: TunnelRightTop, Out: TunnelLeftTop},
 		{In: TunnelRightBottom, Out: TunnelBottomLeft},
 	}, "g")
 	check(e)
-	tile8, e := NewTile([]Tunnel{
+	tile7, e := NewTile([]Tunnel{
 		{In: TunnelTopLeft, Out: TunnelTopRight},
 		{In: TunnelRightTop, Out: TunnelLeftTop},
 		{In: TunnelRightBottom, Out: TunnelBottomLeft},
 		{In: TunnelBottomRight, Out: TunnelLeftBottom},
 	}, "h")
 	check(e)
-	tile9, e := NewTile([]Tunnel{
+	tile8, e := NewTile([]Tunnel{
 		{In: TunnelTopLeft, Out: TunnelLeftTop},
 		{In: TunnelTopRight, Out: TunnelRightBottom},
 		{In: TunnelRightTop, Out: TunnelBottomRight},
@@ -178,7 +209,6 @@ func makeTiles() []*Tile {
 		tile6,
 		tile7,
 		tile8,
-		tile9,
 	}
 	return tiles
 }

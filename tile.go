@@ -81,12 +81,12 @@ func (t *Tile) connect(inlet, outlet int) error {
 // 	return fmt.Sprintf()
 // }
 
-// RotateTo rotates the tile to the given setting.
+// RotateTopTo rotates the tile such that the top is facing the given direction
 // 0: Top in the North
 // 1: Top in the West
 // 2: Top in the South
 // 3: Top in the East
-func (t *Tile) RotateTo(rotation int) error {
+func (t *Tile) RotateTopTo(rotation int) error {
 	if rotation < DirectionNorth || rotation > DirectionEast {
 		return fmt.Errorf("rotation out of bounds %v", rotation)
 	}
