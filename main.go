@@ -8,6 +8,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -54,11 +55,11 @@ func main() {
 
 		if checkBoard(boardTunnels, set) {
 			fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
-			fmt.Printf("Solution: %v %v", tileModel, endTileModel)
+			fmt.Println(printTileSet(set, false))
 		}
 		count++
-		if count%10000000 == 0 {
-			log.Infof("Tried %v combinations. Current tile set %v\n", count, printTileSet(set, true))
+		if count%1000000 == 0 {
+			log.Infof("Tried %v combinations\t\tCurrent tile set %v\t%v\t%v", count, printTileSet(set, true), tileModel, rotaModel)
 		}
 		tileModel, rotaModel = permute(tileModel, rotaModel)
 	}
@@ -68,11 +69,7 @@ func main() {
 
 	if checkBoard(boardTunnels, set) {
 		fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
-		fmt.Printf("Solution: %v %v", tileModel, endTileModel)
-	}
-	count++
-	if count%10000000 == 0 {
-		log.Infof("Tried %v combinations. Current model %v %v\n", count, tileModel, rotaModel)
+		fmt.Println(printTileSet(set, false))
 	}
 	tileModel, rotaModel = permute(tileModel, rotaModel)
 }
@@ -98,19 +95,27 @@ func makeTileSet(tiles []*Tile, tileModel string, rotaModel string) ([][]*Tile, 
 		}
 	}
 
+	tileIndexStrings := strings.Split(tileModel, "")
+	tileIndexInts := make([]int, len(tileIndexStrings))
+	for i, s := range tileIndexStrings {
+		in, e := strconv.ParseInt(s, 10, 0)
+		check(e)
+		tileIndexInts[i] = int(in - 1)
+	}
+
 	tileSet := [][]*Tile{
 		{
-			tiles[0],
-			tiles[1],
-			tiles[2],
+			tiles[tileIndexInts[0]],
+			tiles[tileIndexInts[1]],
+			tiles[tileIndexInts[2]],
 		}, {
-			tiles[3],
+			tiles[tileIndexInts[3]],
 			centerTile,
-			tiles[4],
+			tiles[tileIndexInts[4]],
 		}, {
-			tiles[5],
-			tiles[6],
-			tiles[7],
+			tiles[tileIndexInts[5]],
+			tiles[tileIndexInts[6]],
+			tiles[tileIndexInts[7]],
 		},
 	}
 
