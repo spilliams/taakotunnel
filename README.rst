@@ -21,3 +21,19 @@ Each tile can be rotated to any of 4 rotations. A single tile order can have ``4
 ``40,320 * 65,536 = 2,642,411,520``
 
 I ran a test of one version of the code, picking random tile orders and random rotation orders (without the center tile fixed), and the program did about 206,000,000 attempts in 7 hours. At that rate, I could test all 2.6 billion permutations in roughly 90 hours.
+
+TODO:
+
+1. permutation algorithm:
+
+   given a tile order model like "1234":
+
+   ::
+
+      loop over the digits. Let this digit be i
+         if all digits after i are in descending order
+            make a set of digits from the digits after i
+            pick the smallest digit from the set that's larger than i
+            swap that digit out with i
+            sort the set in ascending order
+            append the set to the current model
