@@ -7,9 +7,7 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"strconv"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -60,7 +58,7 @@ func main() {
 		}
 		count++
 		if count%10000000 == 0 {
-			log.Infof("Tried %v combinations. Current model %v %v\n", count, tileModel, rotaModel)
+			log.Infof("Tried %v combinations. Current tile set %v\n", count, printTileSet(set, true))
 		}
 		tileModel, rotaModel = permute(tileModel, rotaModel)
 	}
@@ -130,17 +128,6 @@ func printTileSet(tileSet [][]*Tile, oneLine bool) string {
 		}
 	}
 	return p
-}
-
-// https://www.calhoun.io/how-to-shuffle-arrays-and-slices-in-go/
-func shuffleTiles(slice []*Tile) {
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-	for len(slice) > 0 {
-		n := len(slice)
-		randIndex := r.Intn(n)
-		slice[n-1], slice[randIndex] = slice[randIndex], slice[n-1]
-		slice = slice[:n-1]
-	}
 }
 
 func makeTiles() []*Tile {
