@@ -48,30 +48,40 @@ func main() {
 	endTileModel := "87654321"
 	count := 0
 
+	var won bool
+	var passed []int
+	var set [][]*Tile
+	var e error
+
 	for tileModel < endTileModel {
-		log.Debugf("Trying %v %v", tileModel, rotaModel)
-		set, e := makeTileSet(tiles, tileModel, rotaModel)
+		set, e = makeTileSet(tiles, tileModel, rotaModel)
 		check(e)
 
-		if checkBoard(boardTunnels, set) {
+		won, passed = checkBoard(boardTunnels, set)
+		if won {
 			fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
 			fmt.Println(printTileSet(set, false))
 		}
-		count++
-		if count%1000000 == 0 {
-			log.Infof("Tried %v combinations\t\tCurrent tile set %v\t%v\t%v", count, printTileSet(set, true), tileModel, rotaModel)
+		if len(passed) > 3 {
+			log.Infof("Tried %v, passed %v", printTileSet(set, true), passed)
 		}
-		tileModel, rotaModel = permute(tileModel, rotaModel)
+		count++
+		// if count%1000000 == 0 {
+		// 	log.Infof("Tried %v combinations\t\tCurrent tile set %v\t%v\t%v", count, printTileSet(set, true), tileModel, rotaModel)
+		// }
+		tileModel, rotaModel, e = permute(tileModel, rotaModel)
+		check(e)
 	}
 	log.Debugf("Trying %v %v", tileModel, rotaModel)
-	set, e := makeTileSet(tiles, tileModel, rotaModel)
+	set, e = makeTileSet(tiles, tileModel, rotaModel)
 	check(e)
 
-	if checkBoard(boardTunnels, set) {
+	won, passed = checkBoard(boardTunnels, set)
+	if won {
 		fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
 		fmt.Println(printTileSet(set, false))
 	}
-	tileModel, rotaModel = permute(tileModel, rotaModel)
+	tileModel, rotaModel, e = permute(tileModel, rotaModel)
 }
 
 func makeTileSet(tiles []*Tile, tileModel string, rotaModel string) ([][]*Tile, error) {
@@ -212,8 +222,9 @@ type location struct {
 	end    bool
 }
 
-func checkBoard(boardTunnels map[int]int, tileSet [][]*Tile) bool {
+func checkBoard(boardTunnels map[int]int, tileSet [][]*Tile) (bool, []int) {
 	boardMap := makeBoardMap(tileSet)
+	countPassed := []int{}
 
 	for startingTunnel, endingTunnel := range boardTunnels {
 		log.Debugf("Checking that tunnel %v connects to %v", startingTunnel, endingTunnel)
@@ -225,10 +236,11 @@ func checkBoard(boardTunnels map[int]int, tileSet [][]*Tile) bool {
 		}
 		if boardMap[endingTunnel].row != loc.row || boardMap[endingTunnel].col != loc.col || boardMap[endingTunnel].tunnel != loc.tunnel {
 			log.Debug("  Failed!")
-			return false
+			return false, countPassed
 		}
+		countPassed = append(countPassed, startingTunnel)
 	}
-	return true
+	return true, countPassed
 }
 
 // returns a map from tunnel number to location{tile, tiletunnel}
