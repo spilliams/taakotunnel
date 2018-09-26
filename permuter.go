@@ -10,7 +10,7 @@ import (
 var tilePermutationBase = 8
 var rotaPermutationBase = 4
 
-func permute(tileModel, rotaModel string) (string, string) {
+func permute(tileModel, rotaModel string) (string, string, error) {
 	rotaInt, _ := strconv.ParseInt(rotaModel, rotaPermutationBase, 64)
 	newRotaInt := rotaInt + 1
 	newRotaModel := strconv.FormatInt(newRotaInt, rotaPermutationBase)
@@ -23,17 +23,24 @@ func permute(tileModel, rotaModel string) (string, string) {
 		for len(newRotaModel) < tilePermutationBase {
 			newRotaModel = fmt.Sprintf("0%v", newRotaModel)
 		}
-		return permuteTiles(tileModel), newRotaModel
+		tileModel, e := permuteTiles(tileModel)
+		return tileModel, newRotaModel, e
 	}
-	return tileModel, newRotaModel
+	return tileModel, newRotaModel, nil
 }
 
-func permuteTiles(tileModel string) string {
+func permuteTiles(tileModel string) (string, error) {
 	tileModel = incrementTileModel(tileModel)
-	for !validTileModel(tileModel) {
+	valid := false
+	var e error
+	for !valid && e == nil {
+		valid, e = validateTileModel(tileModel)
+		if e != nil {
+			return tileModel, e
+		}
 		tileModel = incrementTileModel(tileModel)
 	}
-	return tileModel
+	return tileModel, nil
 }
 
 func incrementTileModel(tileModel string) string {
@@ -67,11 +74,11 @@ func stringAdd(st string, add int64) string {
 	return out
 }
 
-func validTileModel(tileModel string) bool {
+func validateTileModel(tileModel string) (bool, error) {
 	log.Debugf("validTileModel %v in base %v?", tileModel, tilePermutationBase)
 	if len(tileModel) != tilePermutationBase {
 		log.Debugf("  no, tileModel incorrect length")
-		return false
+		return false, fmt.Errorf("tileModel incorrect length")
 	}
 	for i := 1; i <= tilePermutationBase; i++ {
 		// make sure tileModel has char
@@ -84,8 +91,8 @@ func validTileModel(tileModel string) bool {
 		}
 		if !found {
 			log.Debugf("  no, couldn't find %v in %v", lookfor, tileModel)
-			return false
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
