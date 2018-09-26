@@ -78,7 +78,7 @@ func TestIncrementTileModel(t *testing.T) {
 	}
 }
 
-func TestValidTileModel(t *testing.T) {
+func TestValidateTileModel(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	tilePermutationBase = 4
 	ps := map[string]bool{
@@ -89,8 +89,12 @@ func TestValidTileModel(t *testing.T) {
 		"4000": false,
 	}
 	for p, shouldBe := range ps {
-		if validTileModel(p) != shouldBe {
-			t.Fatalf("%v should be %v valid, is %v valid", p, shouldBe, validTileModel(p))
+		valid, e := validateTileModel(p)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if valid != shouldBe {
+			t.Fatalf("%v should be %v valid, is %v valid", p, shouldBe, valid)
 		}
 	}
 }
@@ -113,7 +117,10 @@ func TestTilePermuterBase3(t *testing.T) {
 	for _, shouldBe := range ps {
 		log.Debugf("permutation %v", p)
 		origP := p
-		p, _ = permute(p, "333")
+		p, _, e := permute(p, "333")
+		if e != nil {
+			t.Fatal(e)
+		}
 		if p != shouldBe {
 			t.Fatalf("permutation of %v should be %v, actual %v", origP, shouldBe, p)
 		}
@@ -135,7 +142,10 @@ func TestTilePermuterBase4(t *testing.T) {
 	for _, shouldBe := range ps {
 		log.Debugf("permutation %v", p)
 		origP := p
-		p, _ = permute(p, "3333")
+		p, _, e := permute(p, "3333")
+		if e != nil {
+			t.Fatal(e)
+		}
 		if p != shouldBe {
 			t.Fatalf("permutation of %v should be %v, actual %v", origP, shouldBe, p)
 		}
@@ -224,7 +234,11 @@ func TestWholePermuterBase3(t *testing.T) {
 	for _, shouldBe := range ps {
 		log.Debugf("permutation %v", p)
 		origP := p
-		p.t, p.r = permute(p.t, p.r)
+		var e error
+		p.t, p.r, e = permute(p.t, p.r)
+		if e != nil {
+			t.Fatal(e)
+		}
 		if p != shouldBe {
 			t.Fatalf("permutation of %v should be %v, actual %v", origP, shouldBe, p)
 		}

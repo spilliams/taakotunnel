@@ -1,35 +1,11 @@
-package main
+package model
 
 import "fmt"
-
-const (
-	TunnelNotConnected int = iota
-	TunnelTopLeft
-	TunnelTopRight
-	TunnelRightTop
-	TunnelRightBottom
-	TunnelBottomRight
-	TunnelBottomLeft
-	TunnelLeftBottom
-	TunnelLeftTop
-)
-
-const (
-	DirectionNorth int = iota
-	DirectionWest
-	DirectionSouth
-	DirectionEast
-)
 
 type Tile struct {
 	letter   string
 	tunnels  map[int]int
 	rotation int
-}
-
-type Tunnel struct {
-	In  int
-	Out int
 }
 
 // NewTile creates a new tile, with the given letter and with the connections
@@ -164,4 +140,12 @@ func NextTunnel(inlet int) (int, error) {
 		8: 3,
 	}
 	return io[inlet], nil
+}
+
+func (t *Tile) Letter() string {
+	return t.letter
+}
+
+func (t *Tile) Rotation() int {
+	return t.rotation
 }

@@ -75,7 +75,7 @@ func stringAdd(st string, add int64) string {
 }
 
 func validateTileModel(tileModel string) (bool, error) {
-	log.Debugf("validTileModel %v in base %v?", tileModel, tilePermutationBase)
+	log.Debugf("validateTileModel %v in base %v?", tileModel, tilePermutationBase)
 	if len(tileModel) != tilePermutationBase {
 		log.Debugf("  no, tileModel incorrect length")
 		return false, fmt.Errorf("tileModel incorrect length")

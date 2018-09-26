@@ -7,11 +7,41 @@ package main
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/spilliams/taakotunnel/model"
 )
+
+func main() {
+	// log.SetLevel(log.DebugLevel)
+
+	b, e := model.NewBigBoard()
+	check(e)
+
+	count := 0
+
+	var won bool
+
+	for b.TileModel() < b.EndTileModel() {
+		won, e = b.IsSolved()
+		check(e)
+		if won {
+			break
+		}
+		count++
+		tileModel, rotaModel, e := permute(b.TileModel(), b.RotaModel())
+		check(e)
+		b.SetTileModel(tileModel)
+		b.SetRotaModel(rotaModel)
+	}
+	won, e = b.IsSolved()
+	check(e)
+	if won {
+		fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
+		set, e := b.MakeTileSet()
+		check(e)
+		fmt.Println(printTileSet(set, false))
+	}
+}
 
 func check(e error) {
 	if e != nil {
@@ -19,293 +49,15 @@ func check(e error) {
 	}
 }
 
-// type solution struct {
-// 	tiles     string
-// 	rotations string
-// }
-
-func main() {
-	// log.SetLevel(log.DebugLevel)
-
-	boardTunnels := map[int]int{
-		1:  20, // I
-		2:  12, // II
-		3:  16, // III
-		4:  13, // IV
-		5:  7,  // V
-		6:  9,  // VI
-		8:  23, // VII
-		10: 15, // VIII
-		11: 14, // IX
-		17: 19, // X
-		18: 21, // XI
-		22: 24, // XII
-	}
-	tiles := makeTiles()
-
-	tileModel := "12345678"
-	rotaModel := "00000000"
-	endTileModel := "87654321"
-	count := 0
-
-	var won bool
-	var passed []int
-	var set [][]*Tile
-	var e error
-
-	for tileModel < endTileModel {
-		set, e = makeTileSet(tiles, tileModel, rotaModel)
-		check(e)
-
-		won, passed = checkBoard(boardTunnels, set)
-		if won {
-			fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
-			fmt.Println(printTileSet(set, false))
-		}
-		if len(passed) > 3 {
-			log.Infof("Tried %v, passed %v", printTileSet(set, true), passed)
-		}
-		count++
-		// if count%1000000 == 0 {
-		// 	log.Infof("Tried %v combinations\t\tCurrent tile set %v\t%v\t%v", count, printTileSet(set, true), tileModel, rotaModel)
-		// }
-		tileModel, rotaModel, e = permute(tileModel, rotaModel)
-		check(e)
-	}
-	log.Debugf("Trying %v %v", tileModel, rotaModel)
-	set, e = makeTileSet(tiles, tileModel, rotaModel)
-	check(e)
-
-	won, passed = checkBoard(boardTunnels, set)
-	if won {
-		fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
-		fmt.Println(printTileSet(set, false))
-	}
-	tileModel, rotaModel, e = permute(tileModel, rotaModel)
-}
-
-func makeTileSet(tiles []*Tile, tileModel string, rotaModel string) ([][]*Tile, error) {
-	centerTile, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelBottomRight},
-		{In: TunnelTopRight, Out: TunnelLeftTop},
-		{In: TunnelRightTop, Out: TunnelRightBottom},
-		{In: TunnelBottomLeft, Out: TunnelLeftBottom},
-	}, "d")
-	if e != nil {
-		return nil, e
-	}
-	centerTile.RotateTopTo(DirectionSouth)
-
-	// rotate tiles
-	for i := 0; i < len(rotaModel); i++ {
-		rotateTo64, _ := strconv.ParseInt(rotaModel[i:i+1], 10, 0)
-		e = tiles[i].RotateTopTo(int(rotateTo64))
-		if e != nil {
-			return nil, e
-		}
-	}
-
-	tileIndexStrings := strings.Split(tileModel, "")
-	tileIndexInts := make([]int, len(tileIndexStrings))
-	for i, s := range tileIndexStrings {
-		in, e := strconv.ParseInt(s, 10, 0)
-		check(e)
-		tileIndexInts[i] = int(in - 1)
-	}
-
-	tileSet := [][]*Tile{
-		{
-			tiles[tileIndexInts[0]],
-			tiles[tileIndexInts[1]],
-			tiles[tileIndexInts[2]],
-		}, {
-			tiles[tileIndexInts[3]],
-			centerTile,
-			tiles[tileIndexInts[4]],
-		}, {
-			tiles[tileIndexInts[5]],
-			tiles[tileIndexInts[6]],
-			tiles[tileIndexInts[7]],
-		},
-	}
-
-	return tileSet, nil
-}
-
-func printTileSet(tileSet [][]*Tile, oneLine bool) string {
+func printTileSet(tileSet [][]*model.Tile, oneLine bool) string {
 	p := ""
 	for _, tileRow := range tileSet {
 		for _, tile := range tileRow {
-			p = p + fmt.Sprintf("%v%v ", tile.letter, tile.rotation)
+			p = p + fmt.Sprintf("%v%v ", tile.Letter(), tile.Rotation())
 		}
 		if !oneLine {
 			p = p + "\n"
 		}
 	}
 	return p
-}
-
-func makeTiles() []*Tile {
-	tile1, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelRightTop},
-		{In: TunnelTopRight, Out: TunnelBottomRight},
-		{In: TunnelBottomLeft, Out: TunnelLeftTop},
-		{In: TunnelLeftBottom, Out: TunnelRightBottom},
-	}, "a")
-	check(e)
-	tile2, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelBottomLeft},
-		{In: TunnelTopRight, Out: TunnelRightTop},
-		{In: TunnelRightBottom, Out: TunnelLeftTop},
-		{In: TunnelBottomRight, Out: TunnelLeftBottom},
-	}, "b")
-	check(e)
-	tile3, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelBottomRight},
-		{In: TunnelTopRight, Out: TunnelLeftTop},
-		{In: TunnelRightTop, Out: TunnelLeftBottom},
-		{In: TunnelRightBottom, Out: TunnelBottomLeft},
-	}, "c")
-	check(e)
-	tile4, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelRightTop},
-		{In: TunnelTopRight, Out: TunnelBottomRight},
-		{In: TunnelRightBottom, Out: TunnelBottomLeft},
-		{In: TunnelLeftBottom, Out: TunnelLeftTop},
-	}, "e")
-	check(e)
-	tile5, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelBottomRight},
-		{In: TunnelTopRight, Out: TunnelRightTop},
-		{In: TunnelRightBottom, Out: TunnelLeftBottom},
-		{In: TunnelBottomLeft, Out: TunnelLeftTop},
-	}, "f")
-	check(e)
-	tile6, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelBottomRight},
-		{In: TunnelTopRight, Out: TunnelLeftBottom},
-		{In: TunnelRightTop, Out: TunnelLeftTop},
-		{In: TunnelRightBottom, Out: TunnelBottomLeft},
-	}, "g")
-	check(e)
-	tile7, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelTopRight},
-		{In: TunnelRightTop, Out: TunnelLeftTop},
-		{In: TunnelRightBottom, Out: TunnelBottomLeft},
-		{In: TunnelBottomRight, Out: TunnelLeftBottom},
-	}, "h")
-	check(e)
-	tile8, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelLeftTop},
-		{In: TunnelTopRight, Out: TunnelRightBottom},
-		{In: TunnelRightTop, Out: TunnelBottomRight},
-		{In: TunnelBottomLeft, Out: TunnelLeftBottom},
-	}, "i")
-	check(e)
-	tiles := []*Tile{
-		tile1,
-		tile2,
-		tile3,
-		tile4,
-		tile5,
-		tile6,
-		tile7,
-		tile8,
-	}
-	return tiles
-}
-
-type location struct {
-	row    int // 0-2
-	col    int // 0-2
-	tunnel int // 0-8
-	end    bool
-}
-
-func checkBoard(boardTunnels map[int]int, tileSet [][]*Tile) (bool, []int) {
-	boardMap := makeBoardMap(tileSet)
-	countPassed := []int{}
-
-	for startingTunnel, endingTunnel := range boardTunnels {
-		log.Debugf("Checking that tunnel %v connects to %v", startingTunnel, endingTunnel)
-		loc := boardMap[startingTunnel]
-		log.Debugf("  starting at %v", loc)
-		for !loc.end {
-			loc = follow(loc, tileSet)
-			log.Debugf("  followed to %v", loc)
-		}
-		if boardMap[endingTunnel].row != loc.row || boardMap[endingTunnel].col != loc.col || boardMap[endingTunnel].tunnel != loc.tunnel {
-			log.Debug("  Failed!")
-			return false, countPassed
-		}
-		countPassed = append(countPassed, startingTunnel)
-	}
-	return true, countPassed
-}
-
-// returns a map from tunnel number to location{tile, tiletunnel}
-func makeBoardMap(tileSet [][]*Tile) map[int]location {
-	return map[int]location{
-		1:  location{row: 0, col: 0, tunnel: TunnelTopLeft},
-		2:  location{row: 0, col: 0, tunnel: TunnelTopRight},
-		3:  location{row: 0, col: 1, tunnel: TunnelTopLeft},
-		4:  location{row: 0, col: 1, tunnel: TunnelTopRight},
-		5:  location{row: 0, col: 2, tunnel: TunnelTopLeft},
-		6:  location{row: 0, col: 2, tunnel: TunnelTopRight},
-		7:  location{row: 0, col: 2, tunnel: TunnelRightTop},
-		8:  location{row: 0, col: 2, tunnel: TunnelRightBottom},
-		9:  location{row: 1, col: 2, tunnel: TunnelRightTop},
-		10: location{row: 1, col: 2, tunnel: TunnelRightBottom},
-		11: location{row: 2, col: 2, tunnel: TunnelRightTop},
-		12: location{row: 2, col: 2, tunnel: TunnelRightBottom},
-		13: location{row: 2, col: 2, tunnel: TunnelBottomRight},
-		14: location{row: 2, col: 2, tunnel: TunnelBottomLeft},
-		15: location{row: 2, col: 1, tunnel: TunnelBottomRight},
-		16: location{row: 2, col: 1, tunnel: TunnelBottomLeft},
-		17: location{row: 2, col: 0, tunnel: TunnelBottomRight},
-		18: location{row: 2, col: 0, tunnel: TunnelBottomLeft},
-		19: location{row: 2, col: 0, tunnel: TunnelLeftBottom},
-		20: location{row: 2, col: 0, tunnel: TunnelLeftTop},
-		21: location{row: 1, col: 0, tunnel: TunnelLeftBottom},
-		22: location{row: 1, col: 0, tunnel: TunnelLeftTop},
-		23: location{row: 0, col: 0, tunnel: TunnelLeftBottom},
-		24: location{row: 0, col: 0, tunnel: TunnelLeftTop},
-	}
-}
-
-func follow(loc location, tileSet [][]*Tile) location {
-	// which tile are we entering?
-	log.Debugf("    entering tile [%v,%v] from %v", loc.row, loc.col, loc.tunnel)
-	thisTile := tileSet[loc.row][loc.col]
-	// how does that tile route us?
-	outlet, e := thisTile.Follow(loc.tunnel)
-	check(e)
-	log.Debugf("    that tunnel goes to %v", outlet)
-	// which tile is this outlet pointing to?
-	newLoc := location{row: loc.row, col: loc.col}
-	if outlet < TunnelRightTop {
-		newLoc.row = newLoc.row - 1
-	} else if outlet < TunnelBottomRight {
-		newLoc.col = newLoc.col + 1
-	} else if outlet < TunnelLeftBottom {
-		newLoc.row = newLoc.row + 1
-	} else {
-		newLoc.col = newLoc.col - 1
-	}
-	log.Debugf("    next tile is [%v,%v]", newLoc.row, newLoc.col)
-	// is there a tile to go to there?
-	if newLoc.row < 0 || newLoc.row > 2 || newLoc.col < 0 || newLoc.col > 2 {
-		// no? new location is the same as old location, but with the tunnel updated
-		loc.tunnel = outlet
-		loc.end = true
-		log.Debug("    went off the board! returning old location with outlet tunnel")
-		return loc
-	}
-	// which tunnel are we entering on the new tile?
-	inlet, e := NextTunnel(outlet)
-	check(e)
-	log.Debugf("    still on the board. outlet tunnel translates to inlet tunnel %v", inlet)
-	newLoc.tunnel = inlet
-
-	return newLoc
 }
