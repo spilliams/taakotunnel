@@ -10,6 +10,7 @@ type Board interface {
 	MakeTileSet() ([][]*Tile, error)
 	TunnelMap() map[int]Location
 	IsSolved() bool
+	Size() int
 }
 
 type TileBoard struct {

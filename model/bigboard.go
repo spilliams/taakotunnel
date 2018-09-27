@@ -28,7 +28,7 @@ func (b *BigBoard) EdgeTunnels() map[int]int {
 		4:  13, // IV
 		5:  7,  // V
 		6:  9,  // VI
-		8:  23, // VII
+		7:  23, // VII
 		10: 15, // VIII
 		11: 14, // IX
 		17: 19, // X
@@ -65,7 +65,7 @@ func (b *BigBoard) MakeTileSet() ([][]*Tile, error) {
 		if e != nil {
 			return nil, e
 		}
-		tileIndexInts[i] = int(in - 1)
+		tileIndexInts[i] = int(in)
 	}
 
 	tileSet := [][]*Tile{
@@ -215,7 +215,7 @@ func (b *BigBoard) IsSolved() (bool, error) {
 		loc := boardMap[startingTunnel]
 		log.Debugf("  starting at %v", loc)
 		for !loc.end {
-			loc, e = follow(loc, tileSet)
+			loc, e = b.follow(loc, tileSet)
 			if e != nil {
 				return false, e
 			}
@@ -229,7 +229,7 @@ func (b *BigBoard) IsSolved() (bool, error) {
 	return true, nil
 }
 
-func follow(loc Location, tileSet [][]*Tile) (Location, error) {
+func (b *BigBoard) follow(loc Location, tileSet [][]*Tile) (Location, error) {
 	// which tile are we entering?
 	log.Debugf("    entering tile [%v,%v] from %v", loc.row, loc.col, loc.tunnel)
 	thisTile := tileSet[loc.row][loc.col]

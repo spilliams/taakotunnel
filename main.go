@@ -9,12 +9,14 @@ import (
 	"fmt"
 
 	"github.com/spilliams/taakotunnel/model"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	// log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.DebugLevel)
 
-	b, e := model.NewBigBoard()
+	b, e := model.NewSmallBoard()
 	check(e)
 
 	count := 0
