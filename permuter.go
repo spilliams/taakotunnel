@@ -24,63 +24,58 @@ func permute(tileModel, rotaModel string) (string, string, error) {
 		for len(newRotaModel) < tilePermutationBase {
 			newRotaModel = fmt.Sprintf("0%v", newRotaModel)
 		}
-		tileModel, e := permuteTiles(tileModel)
+		tileModel, e := permuteTiles(tileModel, tilePermutationBase)
 		return tileModel, newRotaModel, e
 	}
 	return tileModel, newRotaModel, nil
 }
 
-func permuteTiles(tileModel string) (string, error) {
-	tileModel = incrementTileModel(tileModel)
+func permuteTiles(tileModel string, base int) (string, error) {
 	valid := false
 	var e error
 	for !valid && e == nil {
-		valid, e = validateTileModel(tileModel)
+		tileModel = incrementTileModel(tileModel, base)
+		valid, e = validateTileModel(tileModel, base)
 		if e != nil {
 			return tileModel, e
 		}
-		tileModel = incrementTileModel(tileModel)
 	}
 	return tileModel, nil
 }
 
-func incrementTileModel(tileModel string) string {
-	tilePermutationBase := len(tileModel)
-	// log.Debugf("increment tile model %v", tileModel)
-	// log.Debugf("subtracted 1: %v", tileModel)
-	tileInt, e := strconv.ParseInt(tileModel, tilePermutationBase, 64)
+func incrementTileModel(tileModel string, base int) string {
+	log.Debugf("increment tile model %v", tileModel)
+	tileInt, e := strconv.ParseInt(tileModel, base, 64)
 	check(e)
-	// log.Debugf("converted to int in base %v: %v", tilePermutationBase, tileInt)
+	// log.Debugf("converted to int in base %v: %v", base, tileInt)
 	tileInt++
 	// log.Debugf("incremented: %v", tileInt)
-	tileModel = strconv.FormatInt(tileInt, tilePermutationBase)
+	tileModel = strconv.FormatInt(tileInt, base)
 	// log.Debugf("converted to string: %v", tileModel)
-	for len(tileModel) < tilePermutationBase {
+	for len(tileModel) < base {
 		tileModel = fmt.Sprintf("0%v", tileModel)
 	}
 	// log.Debugf("padded string: %v", tileModel)
-	// log.Debugf("added 1: %v", tileModel)
 	return tileModel
 }
 
-func validateTileModel(tileModel string) (bool, error) {
-	tilePermutationBase := len(tileModel)
-	log.Debugf("validateTileModel %v in base %v?", tileModel, tilePermutationBase)
-	if len(tileModel) != tilePermutationBase {
-		// log.Debugf("  no, tileModel incorrect length")
+func validateTileModel(tileModel string, base int) (bool, error) {
+	log.Debugf("validateTileModel %v in base %v?", tileModel, base)
+	if len(tileModel) != base {
+		log.Debugf("  no, tileModel incorrect length")
 		return false, fmt.Errorf("tileModel incorrect length")
 	}
-	for i := 1; i <= tilePermutationBase; i++ {
+	for i := 0; i < base; i++ {
 		// make sure tileModel has char
 		lookfor := strconv.Itoa(i)
 		found := false
-		for j := 0; j < tilePermutationBase; j++ {
+		for j := 0; j < base; j++ {
 			if tileModel[j:j+1] == lookfor {
 				found = true
 			}
 		}
 		if !found {
-			// log.Debugf("  no, couldn't find %v in %v", lookfor, tileModel)
+			log.Debugf("  no, couldn't find %v in %v", lookfor, tileModel)
 			return false, nil
 		}
 	}

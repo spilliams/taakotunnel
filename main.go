@@ -14,35 +14,68 @@ import (
 )
 
 func main() {
-	log.SetLevel(log.DebugLevel)
+	// log.SetLevel(log.DebugLevel)
 
-	b, e := model.NewSmallBoard()
+	b, e := model.NewBigBoard()
 	check(e)
 
 	count := 0
-
 	var won bool
+	var set [][]*model.Tile
 
 	for b.TileModel() < b.EndTileModel() {
+		count++
+		if count%1000000 == 0 {
+			set, e = b.MakeTileSet()
+			log.Infof("c = %v:\t%v", count, printTileSet(set, true))
+		}
 		won, e = b.IsSolved()
 		check(e)
 		if won {
 			break
 		}
-		count++
 		tileModel, rotaModel, e := permute(b.TileModel(), b.RotaModel())
-		check(e)
+		if e != nil {
+			break
+		}
 		b.SetTileModel(tileModel)
 		b.SetRotaModel(rotaModel)
 	}
-	won, e = b.IsSolved()
-	check(e)
 	if won {
 		fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
-		set, e := b.MakeTileSet()
+		set, e = b.MakeTileSet()
 		check(e)
 		fmt.Println(printTileSet(set, false))
+	} else {
+		fmt.Printf("Failed to find a solution in %v tries\n", count)
 	}
+}
+
+func checkBase4() error {
+	type permutation struct {
+		t string
+		r string
+	}
+	tileModel := "0123"
+	rotaModel := "0000"
+	tries := []permutation{{t: tileModel, r: rotaModel}}
+
+	for true {
+		fmt.Printf("%v %v\n", tileModel, rotaModel)
+		var e error
+		tileModel, rotaModel, e = permute(tileModel, rotaModel)
+		if e != nil {
+			return e
+		}
+		tries = append(tries, permutation{t: tileModel, r: rotaModel})
+		if len(tries)%1000 == 0 {
+			fmt.Println(len(tries))
+		}
+	}
+
+	fmt.Printf("%v attempts", len(tries))
+	fmt.Println(tries)
+	return nil
 }
 
 func check(e error) {

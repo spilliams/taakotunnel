@@ -11,6 +11,7 @@ func TestIncrementTileModel(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	tm := "0123"
 	increments := []string{
+		"0130",
 		"0131",
 		"0132",
 		"0133",
@@ -50,7 +51,7 @@ func TestIncrementTileModel(t *testing.T) {
 	}
 	for _, shouldbe := range increments {
 		origTm := tm
-		tm = incrementTileModel(tm)
+		tm = incrementTileModel(tm, 4)
 		if tm != shouldbe {
 			t.Fatalf("tile increment from %v should be %v, actual %v", origTm, shouldbe, tm)
 		}
@@ -62,12 +63,12 @@ func TestValidateTileModel(t *testing.T) {
 	ps := map[string]bool{
 		"0123": true,
 		"0000": false,
-		"123":  false,
 		"3210": true,
 		"3000": false,
+		"0133": false,
 	}
 	for p, shouldBe := range ps {
-		valid, e := validateTileModel(p)
+		valid, e := validateTileModel(p, 4)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -91,13 +92,15 @@ func TestTilePermuterBase3(t *testing.T) {
 		"210",
 	}
 
+	var e error
 	for _, shouldBe := range ps {
-		log.Debugf("permutation %v", p)
+		log.Debugf("testing permutation %v", p)
 		origP := p
-		p, _, e := permute(p, "333")
+		p, _, e = permute(p, "333")
 		if e != nil {
 			t.Fatal(e)
 		}
+		log.Debugf("test permutation came back %v", p)
 		if p != shouldBe {
 			t.Fatalf("permutation of %v should be %v, actual %v", origP, shouldBe, p)
 		}
@@ -113,13 +116,15 @@ func TestTilePermuterBase4(t *testing.T) {
 	p := "0123"
 	ps := []string{"0132", "0213", "0231", "0312", "0321", "1023", "1032", "1203", "1230", "1302", "1320", "2013", "2031", "2103", "2130", "2301", "2310", "3012", "3021", "3102", "3120", "3201", "3210"}
 
+	var e error
 	for _, shouldBe := range ps {
-		log.Debugf("permutation %v", p)
+		log.Debugf("testing permutation %v", p)
 		origP := p
-		p, _, e := permute(p, "3333")
+		p, _, e = permute(p, "3333")
 		if e != nil {
 			t.Fatal(e)
 		}
+		log.Debugf("test permutation came back %v", p)
 		if p != shouldBe {
 			t.Fatalf("permutation of %v should be %v, actual %v", origP, shouldBe, p)
 		}

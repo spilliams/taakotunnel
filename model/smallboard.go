@@ -104,7 +104,7 @@ func (b *SmallBoard) makeTiles() error {
 	if e != nil {
 		return e
 	}
-	b.tiles = []*Tile{tile3, tile2, tile1, tile0}
+	b.tiles = []*Tile{tile0, tile1, tile3, tile2}
 	return nil
 }
 
