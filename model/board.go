@@ -6,7 +6,7 @@ type Board interface {
 	EndTileModel() string
 	RotaModel() string
 	SetRotaModel(string)
-	EdgeTunnels() map[int]int
+	EdgeTunnels() []Tunnel
 	MakeTileSet() ([][]*Tile, error)
 	TunnelMap() map[int]Location
 	IsSolved() bool

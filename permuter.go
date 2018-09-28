@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
-
-	log "github.com/sirupsen/logrus"
+	// log "github.com/sirupsen/logrus"
 )
 
 var rotaPermutationBase = 4
@@ -44,7 +43,7 @@ func permuteTiles(tileModel string, base int) (string, error) {
 }
 
 func incrementTileModel(tileModel string, base int) string {
-	log.Debugf("increment tile model %v", tileModel)
+	// log.Debugf("increment tile model %v", tileModel)
 	tileInt, e := strconv.ParseInt(tileModel, base, 64)
 	check(e)
 	// log.Debugf("converted to int in base %v: %v", base, tileInt)
@@ -60,9 +59,9 @@ func incrementTileModel(tileModel string, base int) string {
 }
 
 func validateTileModel(tileModel string, base int) (bool, error) {
-	log.Debugf("validateTileModel %v in base %v?", tileModel, base)
+	// log.Debugf("validateTileModel %v in base %v?", tileModel, base)
 	if len(tileModel) != base {
-		log.Debugf("  no, tileModel incorrect length")
+		// log.Debugf("  no, tileModel incorrect length")
 		return false, fmt.Errorf("tileModel incorrect length")
 	}
 	for i := 0; i < base; i++ {
@@ -75,7 +74,7 @@ func validateTileModel(tileModel string, base int) (bool, error) {
 			}
 		}
 		if !found {
-			log.Debugf("  no, couldn't find %v in %v", lookfor, tileModel)
+			// log.Debugf("  no, couldn't find %v in %v", lookfor, tileModel)
 			return false, nil
 		}
 	}

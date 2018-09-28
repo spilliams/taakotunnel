@@ -20,16 +20,20 @@ func NewSmallBoard() (*SmallBoard, error) {
 	return &b, e
 }
 
-func (b *SmallBoard) EdgeTunnels() map[int]int {
-	return map[int]int{
-		1:  12,
-		2:  3,
-		4:  6,
-		5:  7,
-		8:  13,
-		9:  10,
-		11: 14,
-		15: 16,
+func (b *SmallBoard) Size() int {
+	return 2
+}
+
+func (b *SmallBoard) EdgeTunnels() []Tunnel {
+	return []Tunnel{
+		{In: 1, Out: 12},
+		{In: 2, Out: 3},
+		{In: 4, Out: 6},
+		{In: 5, Out: 7},
+		{In: 8, Out: 13},
+		{In: 9, Out: 10},
+		{In: 11, Out: 14},
+		{In: 15, Out: 16},
 	}
 }
 

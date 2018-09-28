@@ -3,8 +3,7 @@ package model
 import (
 	"strconv"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
+	// log "github.com/sirupsen/logrus"
 )
 
 type BigBoard struct {
@@ -49,20 +48,20 @@ func NewBigBoard() (*BigBoard, error) {
 	return &b, e
 }
 
-func (b *BigBoard) EdgeTunnels() map[int]int {
-	return map[int]int{
-		1:  20, // I
-		2:  12, // II
-		3:  16, // III
-		4:  13, // IV
-		5:  7,  // V
-		6:  9,  // VI
-		7:  23, // VII
-		10: 15, // VIII
-		11: 14, // IX
-		17: 19, // X
-		18: 21, // XI
-		22: 24, // XII
+func (b *BigBoard) EdgeTunnels() []Tunnel {
+	return []Tunnel{
+		{In: 5, Out: 7},   // V, 1 tile apart
+		{In: 11, Out: 14}, // IX, 1 tile apart
+		{In: 17, Out: 19}, // X, 1 tile apart
+		{In: 6, Out: 9},   // VI, 2 tiles apart
+		{In: 18, Out: 21}, // XI, 2 tiles apart
+		{In: 22, Out: 24}, // XII, 2 tiles apart
+		{In: 1, Out: 20},  // I, 3 tiles apart
+		{In: 3, Out: 16},  // III, 3 tiles apart
+		{In: 8, Out: 23},  // VII, 3 tiles apart
+		{In: 10, Out: 15}, // VIII, 3 tiles apart
+		{In: 4, Out: 13},  // IV, 4 tiles apart
+		{In: 2, Out: 12},  // II, 4 tiles apart
 	}
 }
 
@@ -223,19 +222,19 @@ func (b *BigBoard) IsSolved() (bool, error) {
 	}
 	boardMap := b.TunnelMap()
 
-	for startingTunnel, endingTunnel := range b.EdgeTunnels() {
-		log.Debugf("Checking that tunnel %v connects to %v", startingTunnel, endingTunnel)
-		loc := boardMap[startingTunnel]
-		log.Debugf("  starting at %v", loc)
+	for _, tunnel := range b.EdgeTunnels() {
+		// log.Debugf("Checking that tunnel %v connects to %v", tunnel.In, tunnel.Out)
+		loc := boardMap[tunnel.In]
+		// log.Debugf("  starting at %v", loc)
 		for !loc.end {
 			loc, e = b.follow(loc, tileSet)
 			if e != nil {
 				return false, e
 			}
-			log.Debugf("  followed to %v", loc)
+			// log.Debugf("  followed to %v", loc)
 		}
-		if boardMap[endingTunnel].row != loc.row || boardMap[endingTunnel].col != loc.col || boardMap[endingTunnel].tunnel != loc.tunnel {
-			log.Debug("  Failed!")
+		if boardMap[tunnel.Out].row != loc.row || boardMap[tunnel.Out].col != loc.col || boardMap[tunnel.Out].tunnel != loc.tunnel {
+			// log.Debug("  Failed!")
 			return false, nil
 		}
 	}
@@ -244,14 +243,14 @@ func (b *BigBoard) IsSolved() (bool, error) {
 
 func (b *BigBoard) follow(loc Location, tileSet [][]*Tile) (Location, error) {
 	// which tile are we entering?
-	log.Debugf("    entering tile [%v,%v] from %v", loc.row, loc.col, loc.tunnel)
+	// log.Debugf("    entering tile [%v,%v] from %v", loc.row, loc.col, loc.tunnel)
 	thisTile := tileSet[loc.row][loc.col]
 	// how does that tile route us?
 	outlet, e := thisTile.Follow(loc.tunnel)
 	if e != nil {
 		return Location{}, e
 	}
-	log.Debugf("    that tunnel goes to %v", outlet)
+	// log.Debugf("    that tunnel goes to %v", outlet)
 	// which tile is this outlet pointing to?
 	newLoc := Location{row: loc.row, col: loc.col}
 	if outlet < TunnelRightTop {
@@ -263,13 +262,13 @@ func (b *BigBoard) follow(loc Location, tileSet [][]*Tile) (Location, error) {
 	} else {
 		newLoc.col = newLoc.col - 1
 	}
-	log.Debugf("    next tile is [%v,%v]", newLoc.row, newLoc.col)
+	// log.Debugf("    next tile is [%v,%v]", newLoc.row, newLoc.col)
 	// is there a tile to go to there?
 	if newLoc.row < 0 || newLoc.row > 2 || newLoc.col < 0 || newLoc.col > 2 {
 		// no? new location is the same as old location, but with the tunnel updated
 		loc.tunnel = outlet
 		loc.end = true
-		log.Debug("    went off the board! returning old location with outlet tunnel")
+		// log.Debug("    went off the board! returning old location with outlet tunnel")
 		return loc, nil
 	}
 	// which tunnel are we entering on the new tile?
@@ -277,7 +276,7 @@ func (b *BigBoard) follow(loc Location, tileSet [][]*Tile) (Location, error) {
 	if e != nil {
 		return Location{}, e
 	}
-	log.Debugf("    still on the board. outlet tunnel translates to inlet tunnel %v", inlet)
+	// log.Debugf("    still on the board. outlet tunnel translates to inlet tunnel %v", inlet)
 	newLoc.tunnel = inlet
 
 	return newLoc, nil
