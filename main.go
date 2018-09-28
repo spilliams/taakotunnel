@@ -7,6 +7,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/spilliams/taakotunnel/model"
 
@@ -14,7 +15,7 @@ import (
 )
 
 func main() {
-	// log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.DebugLevel)
 
 	b, e := model.NewBigBoard()
 	check(e)
@@ -23,12 +24,8 @@ func main() {
 	var won bool
 	var set [][]*model.Tile
 
-	for b.TileModel() < b.EndTileModel() {
-		count++
-		if count%1000000 == 0 {
-			set, e = b.MakeTileSet()
-			log.Infof("c = %v:\t%v", count, printTileSet(set, true))
-		}
+	for true {
+		// log.Debugf("%v: %v %v", count, b.TileModel(), b.RotaModel())
 		won, e = b.IsSolved()
 		check(e)
 		if won {
@@ -36,10 +33,20 @@ func main() {
 		}
 		tileModel, rotaModel, e := permute(b.TileModel(), b.RotaModel())
 		if e != nil {
+			log.Infof("error from permuter: %v (%v)", e, tileModel)
 			break
 		}
 		b.SetTileModel(tileModel)
 		b.SetRotaModel(rotaModel)
+		count++
+		if count%1000000 == 0 {
+			set, e = b.MakeTileSet()
+			countS := strconv.FormatInt(int64(count), 10)
+			for len(countS) < 10 {
+				countS = fmt.Sprintf(" %v", countS)
+			}
+			log.Infof("%v:\t%v\t%v %v", countS, printTileSet(set, true), b.TileModel(), b.RotaModel())
+		}
 	}
 	if won {
 		fmt.Printf("Hooray, we have a solution! after %v tries!\n", count)
