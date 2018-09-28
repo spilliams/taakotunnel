@@ -9,14 +9,43 @@ import (
 
 type BigBoard struct {
 	TileBoard
+	centerTile   *Tile
+	widewideTile *Tile
 }
 
 func NewBigBoard() (*BigBoard, error) {
 	b := BigBoard{}
-	b.tileModel = "01234567"
-	b.rotaModel = "00000000"
-	b.endTileModel = "76543210"
+	b.tileModel = "0123456"
+	b.rotaModel = "0000000"
+	b.endTileModel = "6543210"
 	e := b.makeTiles()
+
+	var centerTile, widewideTile *Tile
+
+	centerTile, e = NewTile([]Tunnel{
+		{In: TunnelTopLeft, Out: TunnelBottomRight},
+		{In: TunnelTopRight, Out: TunnelLeftTop},
+		{In: TunnelRightTop, Out: TunnelRightBottom},
+		{In: TunnelBottomLeft, Out: TunnelLeftBottom},
+	}, "C")
+	if e != nil {
+		return nil, e
+	}
+	centerTile.RotateTopTo(DirectionSouth)
+	b.centerTile = centerTile
+
+	widewideTile, e = NewTile([]Tunnel{
+		{In: TunnelTopLeft, Out: TunnelBottomRight},
+		{In: TunnelTopRight, Out: TunnelLeftBottom},
+		{In: TunnelRightTop, Out: TunnelLeftTop},
+		{In: TunnelRightBottom, Out: TunnelBottomLeft},
+	}, "W")
+	if e != nil {
+		return nil, e
+	}
+	widewideTile.RotateTopTo(DirectionSouth)
+	b.widewideTile = widewideTile
+
 	return &b, e
 }
 
@@ -38,26 +67,7 @@ func (b *BigBoard) EdgeTunnels() map[int]int {
 }
 
 func (b *BigBoard) MakeTileSet() ([][]*Tile, error) {
-	centerTile, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelBottomRight},
-		{In: TunnelTopRight, Out: TunnelLeftTop},
-		{In: TunnelRightTop, Out: TunnelRightBottom},
-		{In: TunnelBottomLeft, Out: TunnelLeftBottom},
-	}, "d")
-	if e != nil {
-		return nil, e
-	}
-	centerTile.RotateTopTo(DirectionSouth)
-
-	// rotate tiles
-	for i := 0; i < len(b.rotaModel); i++ {
-		rotateTo64, _ := strconv.ParseInt(b.rotaModel[i:i+1], 10, 0)
-		e = b.tiles[i].RotateTopTo(int(rotateTo64))
-		if e != nil {
-			return nil, e
-		}
-	}
-
+	// get the tiles in the order of the tileModel
 	tileIndexStrings := strings.Split(b.tileModel, "")
 	tileIndexInts := make([]int, len(tileIndexStrings))
 	for i, s := range tileIndexStrings {
@@ -67,20 +77,33 @@ func (b *BigBoard) MakeTileSet() ([][]*Tile, error) {
 		}
 		tileIndexInts[i] = int(in)
 	}
+	tilesInOrder := make([]*Tile, len(b.tileModel))
+	for i, t := range tileIndexInts {
+		tilesInOrder[i] = b.tiles[t]
+	}
+
+	// rotate tiles
+	for i := 0; i < len(b.rotaModel); i++ {
+		rotateTo64, _ := strconv.ParseInt(b.rotaModel[i:i+1], 10, 0)
+		e := tilesInOrder[i].RotateTopTo(int(rotateTo64))
+		if e != nil {
+			return nil, e
+		}
+	}
 
 	tileSet := [][]*Tile{
 		{
-			b.tiles[tileIndexInts[0]],
-			b.tiles[tileIndexInts[1]],
-			b.tiles[tileIndexInts[2]],
+			tilesInOrder[0],
+			tilesInOrder[1],
+			tilesInOrder[2],
 		}, {
-			b.tiles[tileIndexInts[3]],
-			centerTile,
-			b.tiles[tileIndexInts[4]],
+			tilesInOrder[3],
+			b.centerTile,
+			tilesInOrder[4],
 		}, {
-			b.tiles[tileIndexInts[5]],
-			b.tiles[tileIndexInts[6]],
-			b.tiles[tileIndexInts[7]],
+			tilesInOrder[5],
+			tilesInOrder[6],
+			b.widewideTile,
 		},
 	}
 
@@ -120,7 +143,7 @@ func (b *BigBoard) makeTiles() error {
 		{In: TunnelTopRight, Out: TunnelBottomRight},
 		{In: TunnelRightBottom, Out: TunnelBottomLeft},
 		{In: TunnelLeftBottom, Out: TunnelLeftTop},
-	}, "e")
+	}, "d")
 	if e != nil {
 		return e
 	}
@@ -129,16 +152,7 @@ func (b *BigBoard) makeTiles() error {
 		{In: TunnelTopRight, Out: TunnelRightTop},
 		{In: TunnelRightBottom, Out: TunnelLeftBottom},
 		{In: TunnelBottomLeft, Out: TunnelLeftTop},
-	}, "f")
-	if e != nil {
-		return e
-	}
-	tile5, e := NewTile([]Tunnel{
-		{In: TunnelTopLeft, Out: TunnelBottomRight},
-		{In: TunnelTopRight, Out: TunnelLeftBottom},
-		{In: TunnelRightTop, Out: TunnelLeftTop},
-		{In: TunnelRightBottom, Out: TunnelBottomLeft},
-	}, "g")
+	}, "e")
 	if e != nil {
 		return e
 	}
@@ -147,7 +161,7 @@ func (b *BigBoard) makeTiles() error {
 		{In: TunnelRightTop, Out: TunnelLeftTop},
 		{In: TunnelRightBottom, Out: TunnelBottomLeft},
 		{In: TunnelBottomRight, Out: TunnelLeftBottom},
-	}, "h")
+	}, "f")
 	if e != nil {
 		return e
 	}
@@ -156,7 +170,7 @@ func (b *BigBoard) makeTiles() error {
 		{In: TunnelTopRight, Out: TunnelRightBottom},
 		{In: TunnelRightTop, Out: TunnelBottomRight},
 		{In: TunnelBottomLeft, Out: TunnelLeftBottom},
-	}, "i")
+	}, "g")
 	if e != nil {
 		return e
 	}
@@ -166,7 +180,6 @@ func (b *BigBoard) makeTiles() error {
 		tile2,
 		tile3,
 		tile4,
-		tile5,
 		tile6,
 		tile7,
 	}
