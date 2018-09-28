@@ -26,7 +26,7 @@ func main() {
 
 	for true {
 		// log.Debugf("%v: %v %v", count, b.TileModel(), b.RotaModel())
-		won, e = b.IsSolved()
+		won, e = IsSolved(b)
 		check(e)
 		if won {
 			break
@@ -45,7 +45,7 @@ func main() {
 			for len(countS) < 10 {
 				countS = fmt.Sprintf(" %v", countS)
 			}
-			log.Infof("%v:\t%v\t%v %v", countS, printTileSet(set, true), b.TileModel(), b.RotaModel())
+			// log.Infof("%v:\t%v\t%v %v", countS, printTileSet(set, true), b.TileModel(), b.RotaModel())
 		}
 	}
 	if won {
@@ -102,4 +102,89 @@ func printTileSet(tileSet [][]*model.Tile, oneLine bool) string {
 		}
 	}
 	return p
+}
+
+func IsSolved(b model.Board) (bool, error) {
+	numOK, e := numOK(b)
+	if numOK > 6 {
+		printTunnels(b, numOK)
+	}
+	if numOK == len(b.EdgeTunnels()) {
+		return true, e
+	}
+	return false, e
+}
+
+func printTunnels(b model.Board, num int) {
+	log.Infof("OK Tunnels for %v %v", b.TileModel(), b.RotaModel())
+	t := b.EdgeTunnels()
+	for i := 0; i < num; i++ {
+		log.Infof("  %v", t[i])
+	}
+}
+
+func numOK(b model.Board) (int, error) {
+	numOK := 0
+	tileSet, e := b.MakeTileSet()
+	if e != nil {
+		return numOK, e
+	}
+	boardMap := b.TunnelMap()
+	// log.Debugf("Checking is board solved for %v %v", b.TileModel(), b.RotaModel())
+	for _, tunnel := range b.EdgeTunnels() {
+		loc := boardMap[tunnel.In]
+		for !loc.End {
+			loc, e = follow(b, loc, tileSet)
+			if e != nil {
+				// log.Debugf("  Tunnel %v. Error %v", tunnel, e)
+				return numOK, e
+			}
+		}
+		if boardMap[tunnel.Out].Row == loc.Row && boardMap[tunnel.Out].Col == loc.Col && boardMap[tunnel.Out].Tunnel == loc.Tunnel {
+			numOK++
+		}
+	}
+	return numOK, nil
+}
+
+func follow(b model.Board, loc model.Location, tileSet [][]*model.Tile) (model.Location, error) {
+	// which tile are we entering?
+	// log.Debugf("    entering tile [%v,%v] from %v", loc.row, loc.col, loc.tunnel)
+	thisTile := tileSet[loc.Row][loc.Col]
+	// how does that tile route us?
+	outlet, e := thisTile.Follow(loc.Tunnel)
+	if e != nil {
+		return model.Location{}, e
+	}
+	// log.Debugf("    that tunnel goes to %v", outlet)
+	// which tile is this outlet pointing to?
+	newLoc := model.Location{Row: loc.Row, Col: loc.Col}
+	if outlet < model.TunnelRightTop {
+		newLoc.Row = newLoc.Row - 1
+	} else if outlet < model.TunnelBottomRight {
+		newLoc.Col = newLoc.Col + 1
+	} else if outlet < model.TunnelLeftBottom {
+		newLoc.Row = newLoc.Row + 1
+	} else {
+		newLoc.Col = newLoc.Col - 1
+	}
+	// log.Debugf("    next tile is [%v,%v]", newLoc.row, newLoc.col)
+
+	// is there a tile to go to there?
+	if newLoc.Row < 0 || newLoc.Row >= b.Size() || newLoc.Col < 0 || newLoc.Col >= b.Size() {
+		// no? new location is the same as old location, but with the tunnel updated
+		loc.Tunnel = outlet
+		loc.End = true
+		// log.Debug("    went off the board! returning old location with outlet tunnel")
+		return loc, nil
+	}
+	// which tunnel are we entering on the new tile?
+	inlet, e := model.NextTunnel(outlet)
+	if e != nil {
+		return model.Location{}, e
+	}
+	// log.Debugf("    still on the board. outlet tunnel translates to inlet tunnel %v", inlet)
+	newLoc.Tunnel = inlet
+
+	return newLoc, nil
 }

@@ -3,8 +3,6 @@ package model
 import (
 	"strconv"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type SmallBoard struct {
@@ -15,7 +13,6 @@ func NewSmallBoard() (*SmallBoard, error) {
 	b := SmallBoard{}
 	b.tileModel = "0123"
 	b.rotaModel = "0000"
-	b.endTileModel = "3210"
 	e := b.makeTiles()
 	return &b, e
 }
@@ -38,7 +35,7 @@ func (b *SmallBoard) EdgeTunnels() []Tunnel {
 }
 
 func (b *SmallBoard) MakeTileSet() ([][]*Tile, error) {
-	log.Debugf("making tile set from %v, %v", b.tileModel, b.rotaModel)
+	// log.Debugf("making tile set from %v, %v", b.tileModel, b.rotaModel)
 	// rotate tiles
 	for i := 0; i < len(b.rotaModel); i++ {
 		rotateTo64, _ := strconv.ParseInt(b.rotaModel[i:i+1], 10, 0)
@@ -114,91 +111,21 @@ func (b *SmallBoard) makeTiles() error {
 
 func (s *SmallBoard) TunnelMap() map[int]Location {
 	return map[int]Location{
-		1:  Location{row: 0, col: 0, tunnel: TunnelTopLeft},
-		2:  Location{row: 0, col: 0, tunnel: TunnelTopRight},
-		3:  Location{row: 0, col: 1, tunnel: TunnelTopLeft},
-		4:  Location{row: 0, col: 1, tunnel: TunnelTopRight},
-		5:  Location{row: 0, col: 1, tunnel: TunnelRightTop},
-		6:  Location{row: 0, col: 1, tunnel: TunnelRightBottom},
-		7:  Location{row: 1, col: 1, tunnel: TunnelRightTop},
-		8:  Location{row: 1, col: 1, tunnel: TunnelRightBottom},
-		9:  Location{row: 1, col: 1, tunnel: TunnelBottomRight},
-		10: Location{row: 1, col: 1, tunnel: TunnelBottomLeft},
-		11: Location{row: 1, col: 0, tunnel: TunnelBottomRight},
-		12: Location{row: 1, col: 0, tunnel: TunnelBottomLeft},
-		13: Location{row: 1, col: 0, tunnel: TunnelLeftBottom},
-		14: Location{row: 1, col: 0, tunnel: TunnelLeftTop},
-		15: Location{row: 0, col: 0, tunnel: TunnelLeftBottom},
-		16: Location{row: 0, col: 0, tunnel: TunnelLeftTop},
+		1:  Location{Row: 0, Col: 0, Tunnel: TunnelTopLeft},
+		2:  Location{Row: 0, Col: 0, Tunnel: TunnelTopRight},
+		3:  Location{Row: 0, Col: 1, Tunnel: TunnelTopLeft},
+		4:  Location{Row: 0, Col: 1, Tunnel: TunnelTopRight},
+		5:  Location{Row: 0, Col: 1, Tunnel: TunnelRightTop},
+		6:  Location{Row: 0, Col: 1, Tunnel: TunnelRightBottom},
+		7:  Location{Row: 1, Col: 1, Tunnel: TunnelRightTop},
+		8:  Location{Row: 1, Col: 1, Tunnel: TunnelRightBottom},
+		9:  Location{Row: 1, Col: 1, Tunnel: TunnelBottomRight},
+		10: Location{Row: 1, Col: 1, Tunnel: TunnelBottomLeft},
+		11: Location{Row: 1, Col: 0, Tunnel: TunnelBottomRight},
+		12: Location{Row: 1, Col: 0, Tunnel: TunnelBottomLeft},
+		13: Location{Row: 1, Col: 0, Tunnel: TunnelLeftBottom},
+		14: Location{Row: 1, Col: 0, Tunnel: TunnelLeftTop},
+		15: Location{Row: 0, Col: 0, Tunnel: TunnelLeftBottom},
+		16: Location{Row: 0, Col: 0, Tunnel: TunnelLeftTop},
 	}
-}
-
-// TODO: these two functions are the same between BigBoard and SmallBoard. DRY them out!
-
-func (b *SmallBoard) IsSolved() (bool, error) {
-	tileSet, e := b.MakeTileSet()
-	if e != nil {
-		return false, e
-	}
-	boardMap := b.TunnelMap()
-
-	for startingTunnel, endingTunnel := range b.EdgeTunnels() {
-		log.Debugf("Checking that tunnel %v connects to %v", startingTunnel, endingTunnel)
-		loc := boardMap[startingTunnel]
-		log.Debugf("  starting at %v", loc)
-		for !loc.end {
-			loc, e = b.follow(loc, tileSet)
-			if e != nil {
-				return false, e
-			}
-			log.Debugf("  followed to %v", loc)
-		}
-		if boardMap[endingTunnel].row != loc.row || boardMap[endingTunnel].col != loc.col || boardMap[endingTunnel].tunnel != loc.tunnel {
-			log.Debug("  Failed!")
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-func (b *SmallBoard) follow(loc Location, tileSet [][]*Tile) (Location, error) {
-	// which tile are we entering?
-	log.Debugf("    entering tile [%v,%v] from %v", loc.row, loc.col, loc.tunnel)
-	thisTile := tileSet[loc.row][loc.col]
-	// how does that tile route us?
-	outlet, e := thisTile.Follow(loc.tunnel)
-	if e != nil {
-		return Location{}, e
-	}
-	log.Debugf("    that tunnel goes to %v", outlet)
-	// which tile is this outlet pointing to?
-	newLoc := Location{row: loc.row, col: loc.col}
-	if outlet < TunnelRightTop {
-		newLoc.row = newLoc.row - 1
-	} else if outlet < TunnelBottomRight {
-		newLoc.col = newLoc.col + 1
-	} else if outlet < TunnelLeftBottom {
-		newLoc.row = newLoc.row + 1
-	} else {
-		newLoc.col = newLoc.col - 1
-	}
-	log.Debugf("    next tile is [%v,%v]", newLoc.row, newLoc.col)
-
-	// is there a tile to go to there?
-	if newLoc.row < 0 || newLoc.row > 1 || newLoc.col < 0 || newLoc.col > 1 {
-		// no? new location is the same as old location, but with the tunnel updated
-		loc.tunnel = outlet
-		loc.end = true
-		log.Debug("    went off the board! returning old location with outlet tunnel")
-		return loc, nil
-	}
-	// which tunnel are we entering on the new tile?
-	inlet, e := NextTunnel(outlet)
-	if e != nil {
-		return Location{}, e
-	}
-	log.Debugf("    still on the board. outlet tunnel translates to inlet tunnel %v", inlet)
-	newLoc.tunnel = inlet
-
-	return newLoc, nil
 }

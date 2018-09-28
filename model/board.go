@@ -3,21 +3,18 @@ package model
 type Board interface {
 	TileModel() string
 	SetTileModel(string)
-	EndTileModel() string
 	RotaModel() string
 	SetRotaModel(string)
 	EdgeTunnels() []Tunnel
 	MakeTileSet() ([][]*Tile, error)
 	TunnelMap() map[int]Location
-	IsSolved() bool
 	Size() int
 }
 
 type TileBoard struct {
-	tileModel    string
-	rotaModel    string
-	endTileModel string
-	tiles        []*Tile
+	tileModel string
+	rotaModel string
+	tiles     []*Tile
 }
 
 func (b *TileBoard) TileModel() string {
@@ -26,10 +23,6 @@ func (b *TileBoard) TileModel() string {
 
 func (b *TileBoard) SetTileModel(newTileModel string) {
 	b.tileModel = newTileModel
-}
-
-func (b *TileBoard) EndTileModel() string {
-	return b.endTileModel
 }
 
 func (b *TileBoard) RotaModel() string {
