@@ -24,6 +24,9 @@ func main() {
 	var won bool
 	var set [][]*model.Tile
 
+	// b.SetTileModel("2104635")
+	// b.SetRotaModel("3201221")
+
 	for true {
 		// log.Debugf("%v: %v %v", count, b.TileModel(), b.RotaModel())
 		won, e = IsSolved(b)
@@ -45,7 +48,7 @@ func main() {
 			for len(countS) < 10 {
 				countS = fmt.Sprintf(" %v", countS)
 			}
-			// log.Infof("%v:\t%v\t%v %v", countS, printTileSet(set, true), b.TileModel(), b.RotaModel())
+			log.Infof("%v:\t%v\t%v %v", countS, printTileSet(set, true), b.TileModel(), b.RotaModel())
 		}
 	}
 	if won {
@@ -106,22 +109,22 @@ func printTileSet(tileSet [][]*model.Tile, oneLine bool) string {
 
 func IsSolved(b model.Board) (bool, error) {
 	numOK, e := numOK(b)
-	if numOK > 6 {
-		printTunnels(b, numOK)
-	}
+	// if numOK == 12 {
+	// 	printTunnels(b, numOK)
+	// }
 	if numOK == len(b.EdgeTunnels()) {
 		return true, e
 	}
 	return false, e
 }
 
-func printTunnels(b model.Board, num int) {
-	log.Infof("OK Tunnels for %v %v", b.TileModel(), b.RotaModel())
-	t := b.EdgeTunnels()
-	for i := 0; i < num; i++ {
-		log.Infof("  %v", t[i])
-	}
-}
+// func printTunnels(b model.Board, num int) {
+// 	log.Infof("OK Tunnels for %v %v", b.TileModel(), b.RotaModel())
+// 	t := b.EdgeTunnels()
+// 	for i := 0; i < num; i++ {
+// 		log.Infof("  %v", t[i])
+// 	}
+// }
 
 func numOK(b model.Board) (int, error) {
 	numOK := 0
@@ -132,16 +135,20 @@ func numOK(b model.Board) (int, error) {
 	boardMap := b.TunnelMap()
 	// log.Debugf("Checking is board solved for %v %v", b.TileModel(), b.RotaModel())
 	for _, tunnel := range b.EdgeTunnels() {
+		// log.Debugf("  Tunnel %v:", tunnel)
 		loc := boardMap[tunnel.In]
 		for !loc.End {
 			loc, e = follow(b, loc, tileSet)
 			if e != nil {
-				// log.Debugf("  Tunnel %v. Error %v", tunnel, e)
+				// log.Debugf("  Error %v", e)
 				return numOK, e
 			}
 		}
 		if boardMap[tunnel.Out].Row == loc.Row && boardMap[tunnel.Out].Col == loc.Col && boardMap[tunnel.Out].Tunnel == loc.Tunnel {
+			// log.Debug("  Good!")
 			numOK++
+		} else {
+			// log.Debugf("  Expected %v Actual %v", boardMap[tunnel.Out], loc)
 		}
 	}
 	return numOK, nil
@@ -149,13 +156,17 @@ func numOK(b model.Board) (int, error) {
 
 func follow(b model.Board, loc model.Location, tileSet [][]*model.Tile) (model.Location, error) {
 	// which tile are we entering?
-	// log.Debugf("    entering tile [%v,%v] from %v", loc.row, loc.col, loc.tunnel)
 	thisTile := tileSet[loc.Row][loc.Col]
+	// log.Debugf("    entering tile [%v,%v] (%v) from %v", loc.Row, loc.Col, thisTile.Letter(), loc.Tunnel)
+	// based on the tile's rotation, which of the tile's tunnels is this?
+	tileInlet := (loc.Tunnel+7+(thisTile.Rotation()*2))%8 + 1
 	// how does that tile route us?
-	outlet, e := thisTile.Follow(loc.Tunnel)
+	tileOutlet, e := thisTile.Follow(tileInlet)
 	if e != nil {
 		return model.Location{}, e
 	}
+	// log.Debugf("    wrt the tile, that's %v to %v", tileInlet, tileOutlet)
+	outlet := (tileOutlet+7-(thisTile.Rotation()*2))%8 + 1
 	// log.Debugf("    that tunnel goes to %v", outlet)
 	// which tile is this outlet pointing to?
 	newLoc := model.Location{Row: loc.Row, Col: loc.Col}
@@ -168,7 +179,7 @@ func follow(b model.Board, loc model.Location, tileSet [][]*model.Tile) (model.L
 	} else {
 		newLoc.Col = newLoc.Col - 1
 	}
-	// log.Debugf("    next tile is [%v,%v]", newLoc.row, newLoc.col)
+	// log.Debugf("    next tile is [%v,%v]", newLoc.Row, newLoc.Col)
 
 	// is there a tile to go to there?
 	if newLoc.Row < 0 || newLoc.Row >= b.Size() || newLoc.Col < 0 || newLoc.Col >= b.Size() {

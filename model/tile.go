@@ -40,23 +40,6 @@ func (t *Tile) connect(inlet, outlet int) error {
 	return nil
 }
 
-//123456789012345
-//     1   2
-//     2   1
-// 8 7       4 3
-// 7 8       3 4
-//     5   6
-//     6   5
-// func (t *Tile) String() string {
-// 	fmtString := "     1   2     \n"+
-// 	"     2   1     \n"
-// 	" 8 7       4 3 \n"
-// 	" 7 8       3 4 \n"
-// 	"     5   6     \n"
-// 	"     6   5     "
-// 	return fmt.Sprintf()
-// }
-
 // RotateTopTo rotates the tile such that the top is facing the given direction
 // 0: Top in the North
 // 1: Top in the West
@@ -82,36 +65,10 @@ func (t *Tile) Follow(inlet int) (int, error) {
 		return TunnelNotConnected, fmt.Errorf("inlet out of bounds %v", inlet)
 	}
 
-	/*
-		With tile rotated to TopNorth (0), indices are:
-		  1 2
-		 8   3
-		 7   4
-		  6 5
-		inlet stays the same (0 * 2)
-		With tile rotatedTopWest (1), indices are:
-		  3 4
-		 2   5
-		 1   6
-		  8 7
-		inlet goes up 2 (1 * 2)
-		With tile rotated to TopSouth (2), indices are:
-		  5 6
-		 4   7
-		 3   8
-		  2 1
-		inlet goes up 4 (2 * 2)
-		With tile rotated to TopEast (3), indices are:
-		  7 8
-		 6   1
-		 5   2
-		  4 3
-		inlet goes up 6 (3 * 2)
-	*/
-	inlet = inlet + t.rotation*2
-	if inlet > 8 {
-		inlet = inlet - 8
-	}
+	// inlet = inlet + t.rotation*2
+	// if inlet > 8 {
+	// 	inlet = inlet - 8
+	// }
 
 	return t.tunnels[inlet], nil
 }
